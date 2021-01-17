@@ -12,35 +12,63 @@ namespace ConsoleApp165
     {
         static void Main(string[] args)
         {
-            // find Console.WriteLine(string); in mscorlib 
-            var writeline = GetMethod("Console.WriteLine", new Type[] { typeof(string) });
+            CreateATextFile();
+            PrintToConsole("Whats up doc");
 
-            // Call this function
-            writeline.Invoke(null, new object[] { "Hello world" });
-
-            Console.ReadLine();
+            Console.Read();
         }
 
-        static MethodInfo GetMethod(string func, Type[] parameterTypes = null, BindingFlags flags = BindingFlags.Public | BindingFlags.Static)
+        static void PrintToConsole(string text)
+        {
+            // Find Console.WriteLine(string); in mscorlib 
+            var writeline = GetMethod("Console.WriteLine", BindingFlags.Public | BindingFlags.Static, typeof(string));
+
+            // Call this function
+            writeline.Invoke(null, new object[] { text });
+        }
+
+        static void CreateATextFile()
+        {
+            // Find the StreamWriter type
+            var streamWriterType = GetExportedMscorlibTypes().Where(item => item.FullName.Contains("StreamWriter")).First();
+
+            // Create a StreamWriter instance with .ctor parameter as a string (to create a file)
+            var streamWriterInstance = Activator.CreateInstance(streamWriterType, "MyFile.txt");
+
+            // Get WriteLine method
+            var writeLineMethod = GetMethod("System.IO.StreamWriter.WriteLine", BindingFlags.Public | BindingFlags.Instance, typeof(string));
+
+            // Get Flush method
+            var flushMethod = GetMethod("System.IO.StreamWriter.Flush", BindingFlags.Public | BindingFlags.Instance);
+
+            // call StreamWriter.WriteLine(string);
+            writeLineMethod.Invoke(streamWriterInstance, new object[] { "Hello world" });
+
+            // call StreamWriter.Flush();
+            flushMethod.Invoke(streamWriterInstance, null);
+        }
+
+        static MethodInfo GetMethod(string func, BindingFlags flags = BindingFlags.Public | BindingFlags.Static, params Type[] parameterTypes)
         {
             foreach (var type in GetExportedMscorlibTypes())
             {
                 foreach (var function in type.GetMethods(flags))
                 {
                     if (func == function.Name ||
-                        func == type.Name + "." + function.Name || 
+                        func == type.Name + "." + function.Name ||
                         func == type.FullName + "." + function.Name)
                     {
-                       // Console.WriteLine(type.Name + "." + function.Name);
-                        if(parameterTypes != null)
+                        // Console.WriteLine(type.Name + "." + function.Name);
+                        if (parameterTypes.Length > 0)
                         {
                             var parameters = function.GetParameters();
-                            if (ValidateParameters(parameters,  parameterTypes ))
+                            if (ValidateParameters(parameters, parameterTypes))
                             {
                                 return function;
                             }
                             continue;
-                        } else
+                        }
+                        else
                         {
                             return function;
                         }
@@ -56,18 +84,18 @@ namespace ConsoleApp165
             {
                 for (int i = 0; i < types.Length; i++)
                 {
-                    if (infos[i].ParameterType!= types[i])
+                    if (infos[i].ParameterType != types[i])
                     {
                         return false;
                     }
 
                     return true;
-                       
+
                 }
-                   
+
             }
             return false;
-               
+
         }
 
         static Type[] GetExportedMscorlibTypes()
