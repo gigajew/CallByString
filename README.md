@@ -7,3 +7,6 @@ Call a C# function by string by searching in mscorlib for the right method.
             // Call this function
             writeline.Invoke(null, new object[] { "Hello world" });
 ```
+
+# Donate with Bitcoin
+Donations: bitcoin:12FP1JisjYCsgfteTLMQQMLnVBs65wZD8G
